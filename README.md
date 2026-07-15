@@ -4,16 +4,28 @@ An AI-powered web application that analyzes Brain CT scans to detect hemorrhagic
 
 ## ✨ Features
 - **Stroke Detection**: Upload a CT scan image to predict whether it indicates a hemorrhagic stroke or is normal.
-- **Explainable AI (Grad-CAM)**: Generates a color-coded heatmap over the CT scan to highlight the regions that most influenced the model's prediction, aiding in transparency.
+- **Explainable AI (Saliency Map)**: Generates a color-coded heatmap over the CT scan to highlight the regions that most influenced the model's prediction, aiding in transparency.
 - **Interactive Medical Chatbot**: Ask questions about stroke symptoms, features, and educational medical info using an integrated Llama-3-powered chatbot (via Groq API).
 - **Responsive UI**: A clean, modern web interface.
 
+## 📸 Screenshots
+*(Save your screenshots in a folder named `Docs` and name them exactly as shown below to have them appear here automatically!)*
+
+### 1. Upload Interface
+![Upload Screen](Docs/upload_screen.png)
+
+### 2. Stroke Analysis & Heatmap
+![Analysis Results](Docs/analysis_results.png)
+
+### 3. Medical AI Chatbot
+![Medical Chatbot](Docs/chatbot.png)
+
 ## 🛠️ Tech Stack
 - **Backend**: Python, Flask, Gunicorn
-- **AI/ML**: TensorFlow/Keras, OpenCV, NumPy
+- **AI/ML Engine**: TensorFlow Lite (Optimized for ultra-low memory environments), OpenCV, NumPy
 - **LLM API**: Groq API (Llama-3.3-70b-versatile)
 - **Frontend**: HTML5, CSS3, JavaScript
-- **Deployment**: Pre-configured for deployment on platforms like Render (`requirements.txt`, `runtime.txt`).
+- **Deployment**: Pre-configured for deployment on free-tier platforms like Render (`requirements.txt`, `runtime.txt`).
 
 ## 🚀 Local Setup
 
@@ -49,8 +61,8 @@ An AI-powered web application that analyzes Brain CT scans to detect hemorrhagic
 
 ## 🧠 How it Works
 1. **Preprocessing**: The uploaded image is resized to 224x224, normalized, and converted to an RGB array.
-2. **Prediction**: The image is passed through a custom trained CNN model (`phase2_kesava.h5`) to output a probability score.
-3. **Grad-CAM**: The gradients of the last convolutional layer are extracted to generate a heatmap overlay, providing explainability by highlighting the areas of the brain the model focused on.
+2. **Prediction**: The image is passed through a custom trained dual-output CNN model (`phase2_kesava.tflite`) via the lightweight TFLite runtime to output a probability score.
+3. **Attention Heatmap**: The raw feature maps of the deepest convolutional layer are extracted to generate a Saliency Map overlay, providing explainability by highlighting the areas of the brain the model focused on.
 
 ## ⚠️ Disclaimer
 **This tool is for educational and research purposes only.** It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
