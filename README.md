@@ -9,16 +9,18 @@ An AI-powered web application that analyzes Brain CT scans to detect hemorrhagic
 - **Responsive UI**: A clean, modern web interface.
 
 ## 📸 Screenshots
-*(Save your screenshots in a folder named `Docs` and name them exactly as shown below to have them appear here automatically!)*
 
-### 1. Upload Interface
-![Upload Screen](Docs/upload_screen.png)
+### 1. Clean Upload Interface
+![Upload Screen](static/assets/upload_screen.png)
 
-### 2. Stroke Analysis & Heatmap
-![Analysis Results](Docs/analysis_results.png)
+### 2. Stroke Analysis & Confidence Score
+![Analysis Results](static/assets/analysis_results.png)
 
-### 3. Medical AI Chatbot
-![Medical Chatbot](Docs/chatbot.png)
+### 3. Model Explainability (Saliency Map Heatmap)
+![Model Attention Heatmap](static/assets/grad_cam.png)
+
+### 4. Interactive Medical AI Chatbot
+![Medical Chatbot](static/assets/chatbot.png)
 
 ## 🛠️ Tech Stack
 - **Backend**: Python, Flask, Gunicorn
