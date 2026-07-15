@@ -22,6 +22,25 @@ MODEL_PATH = os.path.join(BASE_DIR, "model", "phase2_kesava.h5")
 
 model = tf.keras.models.load_model(MODEL_PATH)
 
+# ==========================================
+# MEMORY OPTIMIZATION FOR RENDER (512MB RAM)
+# ==========================================
+# Instead of creating the grad_model on every image upload (which crashes the server), 
+# we create it ONCE globally when the app starts.
+last_conv_layer = None
+for layer in reversed(model.layers):
+    if 'conv' in layer.name.lower():
+        last_conv_layer = layer.name
+        break
+
+if last_conv_layer:
+    grad_model = tf.keras.models.Model(
+        inputs=[model.inputs],
+        outputs=[model.get_layer(last_conv_layer).output, model.output]
+    )
+else:
+    grad_model = None
+
 # Get Groq API key
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -35,24 +54,10 @@ def preprocess_image(img_path):
     return img
 
 # Grad-CAM Implementation
-def generate_gradcam(img_path, model):
+def generate_gradcam(img_path, grad_model):
+    if not grad_model:
+        return None
     try:
-        # Find last conv layer
-        last_conv_layer = None
-        for layer in reversed(model.layers):
-            if 'conv' in layer.name.lower():
-                last_conv_layer = layer.name
-                break
-        
-        if not last_conv_layer:
-            return None
-        
-        # Create Grad-CAM model
-        grad_model = tf.keras.models.Model(
-            inputs=[model.inputs],
-            outputs=[model.get_layer(last_conv_layer).output, model.output]
-        )
-        
         # Preprocess image
         img = preprocess_image(img_path)
         
@@ -94,6 +99,9 @@ def generate_gradcam(img_path, model):
         gradcam_path = os.path.join(app.config["UPLOAD_FOLDER"], gradcam_filename)
         cv2.imwrite(gradcam_path, cv2.cvtColor(superimposed, cv2.COLOR_RGB2BGR))
         
+        # Clear keras session to free up memory immediately after processing
+        tf.keras.backend.clear_session()
+        
         return gradcam_path
         
     except Exception as e:
@@ -131,7 +139,7 @@ def index():
             img_path = save_path
             
             # Generate Grad-CAM
-            gradcam_path = generate_gradcam(save_path, model)
+            gradcam_path = generate_gradcam(save_path, grad_model)
 
     return render_template(
         "index.html",
