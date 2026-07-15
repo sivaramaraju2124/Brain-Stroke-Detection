@@ -2,7 +2,7 @@ flask
 gunicorn
 tflite-runtime
 opencv-python-headless
-numpy
+numpy<2.0.0
 pillow
 python-dotenv
 requests
