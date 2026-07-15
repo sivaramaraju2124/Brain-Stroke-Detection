@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cerebrovascular Scan Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <div class="container">
+        <div class="header-content">
+            <div class="logo-section">
+                <svg class="logo-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path>
+                    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path>
+                </svg>
+                <div>
+                    <h1 class="header-title">Cerebrovascular Scan Analyzer</h1>
+                    <p class="header-subtitle">AI-Assisted Hemorrhagic Stroke Detection</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="main-container">
+    <div class="container">
+        
+        <!-- Upload Section -->
+        <section class="upload-section">
+            <div class="card">
+                <div class="card-header">
+                    <svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h2 class="section-title">Upload CT Scan</h2>
+                </div>
+                
+                <form method="POST" action="#results" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+                    <div class="dropzone" id="dropzone">
+                        <input type="file" name="image" id="image" accept="image/*" required>
+                        <div class="dropzone-content">
+                            <svg class="upload-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p class="dropzone-text">Drag & drop CT scan here</p>
+                            <p class="dropzone-subtext">or click to browse</p>
+                            <span class="file-types">Supported: JPG, PNG, DICOM</span>
+                        </div>
+                        <div class="dropzone-preview" id="preview" style="display: none;">
+                            <img id="previewImg" alt="Preview">
+                            <button type="button" class="remove-image" id="removeBtn">×</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="analyzeBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Analyze CT Scan
+                    </button>
+                </form>
+
+                {% if img_path %}
+                <div class="image-preview-section">
+                    <h3 class="preview-title">Uploaded CT Scan</h3>
+                    <img src="{{ img_path }}" alt="CT Scan" class="ct-image">
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        {% if prediction %}
+        <section class="results-section" id="results">
+            <div class="card">
+                <div class="card-header">
+                    <svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <h2 class="section-title">Analysis Results</h2>
+                </div>
+                
+                <div class="diagnosis-result {% if 'Hemorrhagic' in prediction %}diagnosis-positive{% else %}diagnosis-negative{% endif %}">
+                    <div class="diagnosis-icon">
+                        {% if 'Hemorrhagic' in prediction %}
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        {% else %}
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9 12l2 2 4-4"></path>
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <div class="diagnosis-text">
+                        <h3 class="diagnosis-label">Diagnosis</h3>
+                        <p class="diagnosis-value">{{ prediction }}</p>
+                    </div>
+                </div>
+
+                <div class="confidence-container">
+                    <div class="confidence-header">
+                        <span class="confidence-label">Confidence Level</span>
+                        <span class="confidence-value">{{ confidence|round(2) }}%</span>
+                    </div>
+                    <div class="confidence-bar-wrapper">
+                        <div class="confidence-bar" style="width: {{ confidence }}%"></div>
+                    </div>
+                </div>
+
+                <div class="interpretation">
+                    <h4 class="interpretation-title">Clinical Interpretation</h4>
+                    <p class="interpretation-text">
+                        {% if 'Hemorrhagic' in prediction %}
+                        The AI model has detected patterns consistent with hemorrhagic stroke in the submitted CT scan. This finding indicates the presence of bleeding in the brain tissue. <strong>Immediate medical consultation is strongly recommended.</strong>
+                        {% else %}
+                        The AI model has analyzed the CT scan and found no significant patterns consistent with hemorrhagic stroke. The scan appears normal based on the trained model's assessment.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Grad-CAM Visualization -->
+            {% if gradcam_path %}
+            <div class="card gradcam-section">
+                <div class="card-header">
+                    <svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6M5.6 5.6l4.2 4.2m4.2 4.2l4.2 4.2M1 12h6m6 0h6M5.6 18.4l4.2-4.2m4.2-4.2l4.2-4.2"></path>
+                    </svg>
+                    <h2 class="section-title">Model Explainability (Grad-CAM)</h2>
+                </div>
+                
+                <p class="gradcam-description">
+                    Grad-CAM visualization highlights the regions of the CT scan that the AI model focused on when making its prediction. Warmer colors (red/yellow) indicate areas of higher attention.
+                </p>
+                
+                <div class="gradcam-comparison">
+                    <div class="gradcam-item">
+                        <h4 class="gradcam-label">Original CT Scan</h4>
+                        <img src="{{ img_path }}" alt="Original CT" class="gradcam-image">
+                    </div>
+                    <div class="gradcam-item">
+                        <h4 class="gradcam-label">Model Attention Heatmap</h4>
+                        <img src="{{ gradcam_path }}" alt="Grad-CAM" class="gradcam-image">
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        <!-- Model Information -->
+        <section class="info-section">
+            <div class="card">
+                <div class="card-header">
+                    <svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <h2 class="section-title">Model Information</h2>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-icon">📊</div>
+                        <div class="info-content">
+                            <h4 class="info-label">Accuracy</h4>
+                            <p class="info-value">97.21%</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">🧠</div>
+                        <div class="info-content">
+                            <h4 class="info-label">Dataset</h4>
+                            <p class="info-value">Brain CT Images</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">🤖</div>
+                        <div class="info-content">
+                            <h4 class="info-label">Model Type</h4>
+                            <p class="info-value">CNN (Deep Learning)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Disclaimer -->
+        <section class="disclaimer-section">
+            <div class="card disclaimer-card">
+                <div class="disclaimer-header">
+                    <svg class="disclaimer-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <h2 class="section-title">Medical Disclaimer</h2>
+                </div>
+                <p class="disclaimer-text">
+                    This system is developed for <strong>academic and research purposes only</strong>. It is not intended for clinical use and should not be used as a substitute for professional medical diagnosis, treatment, or advice. Always seek the guidance of qualified healthcare professionals for any medical conditions or concerns. The predictions provided by this system are based on artificial intelligence and may not be accurate in all cases.
+                </p>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2024 Cerebrovascular Scan Analyzer | Academic Research Project</p>
+    </div>
+</footer>
+
+<!-- Chatbot Button -->
+<button class="chatbot-button" id="chatbotBtn" aria-label="Open AI Assistant">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+</button>
+
+<!-- Chatbot Modal -->
+<div class="chatbot-modal" id="chatbotModal">
+    <div class="chatbot-container">
+        <div class="chatbot-header">
+            <div class="chatbot-header-content">
+                <svg class="chatbot-header-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <div>
+                    <h3 class="chatbot-title">Stroke AI Assistant</h3>
+                    <p class="chatbot-status">Brain stroke specialist</p>
+                </div>
+            </div>
+            <button class="chatbot-close" id="closeBtn" aria-label="Close chat">×</button>
+        </div>
+        
+        <div class="chatbot-disclaimer">
+            ⚕️ This chatbot provides educational information only. Not for medical diagnosis or treatment.
+        </div>
+        
+        <div class="chatbot-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="message-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="10" r="3"></circle>
+                        <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path>
+                    </svg>
+                </div>
+                <div class="message-content">
+                    <p>Hello! I'm your brain stroke AI assistant. I can help you understand hemorrhagic strokes, CT scan interpretations, and general information about stroke care. How can I assist you today?</p>
+                </div>
+            </div>
+        </div>
+        
+        <form class="chatbot-input-form" id="chatForm">
+            <input 
+                type="text" 
+                class="chatbot-input" 
+                id="chatInput" 
+                placeholder="Ask about brain strokes..." 
+                autocomplete="off"
+                required
+            >
+            <button type="submit" class="chatbot-send" aria-label="Send message">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Drag and Drop Functionality
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('image');
+const preview = document.getElementById('preview');
+const previewImg = document.getElementById('previewImg');
+const removeBtn = document.getElementById('removeBtn');
+const dropzoneContent = dropzone.querySelector('.dropzone-content');
+
+// Click to upload
+dropzone.addEventListener('click', (e) => {
+    if (e.target !== removeBtn && !removeBtn.contains(e.target)) {
+        fileInput.click();
+    }
+});
+
+// Prevent default drag behaviors
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+// Highlight on drag
+['dragenter', 'dragover'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => dropzone.classList.add('dragover'), false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => dropzone.classList.remove('dragover'), false);
+});
+
+// Handle drop
+dropzone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    fileInput.files = files;
+    handleFiles(files);
+});
+
+// Handle file selection
+fileInput.addEventListener('change', (e) => {
+    handleFiles(e.target.files);
+});
+
+function handleFiles(files) {
+    if (files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                dropzoneContent.style.display = 'none';
+                preview.style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+}
+
+// Remove image
+removeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.value = '';
+    preview.style.display = 'none';
+    dropzoneContent.style.display = 'flex';
+});
+
+// Chatbot Functionality
+const chatbotBtn = document.getElementById('chatbotBtn');
+const chatbotModal = document.getElementById('chatbotModal');
+const closeBtn = document.getElementById('closeBtn');
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+const chatMessages = document.getElementById('chatMessages');
+
+chatbotBtn.addEventListener('click', () => {
+    chatbotModal.classList.add('active');
+    chatInput.focus();
+});
+
+closeBtn.addEventListener('click', () => {
+    chatbotModal.classList.remove('active');
+});
+
+chatbotModal.addEventListener('click', (e) => {
+    if (e.target === chatbotModal) {
+        chatbotModal.classList.remove('active');
+    }
+});
+
+chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const message = chatInput.value.trim();
+    if (!message) return;
+    
+    // Add user message
+    addMessage(message, 'user');
+    chatInput.value = '';
+    
+    // Show typing indicator
+    const typingId = addTypingIndicator();
+    
+    try {
+        const response = await fetch('/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: message })
+        });
+        
+        const data = await response.json();
+        
+        // Remove typing indicator
+        removeTypingIndicator(typingId);
+        
+        if (data.response) {
+            addMessage(data.response, 'bot');
+        } else {
+            addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+        }
+    } catch (error) {
+        removeTypingIndicator(typingId);
+        addMessage('Sorry, I could not connect to the server. Please try again later.', 'bot');
+    }
+});
+
+function addMessage(text, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    if (sender === 'bot') {
+        messageDiv.innerHTML = `
+            <div class="message-avatar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="10" r="3"></circle>
+                    <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path>
+                </svg>
+            </div>
+            <div class="message-content">
+                <p>${text}</p>
+            </div>
+        `;
+    } else {
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <p>${text}</p>
+            </div>
+        `;
+    }
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addTypingIndicator() {
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message bot-message typing-indicator';
+    typingDiv.id = 'typing-' + Date.now();
+    typingDiv.innerHTML = `
+        <div class="message-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="10" r="3"></circle>
+                <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path>
+            </svg>
+        </div>
+        <div class="message-content">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    `;
+    chatMessages.appendChild(typingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return typingDiv.id;
+}
+
+function removeTypingIndicator(id) {
+    const typingDiv = document.getElementById(id);
+    if (typingDiv) {
+        typingDiv.remove();
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+flask
+gunicorn
+tensorflow-cpu
+opencv-python-headless
+numpy
+pillow
+python-dotenv
+requests
+matplotlib
