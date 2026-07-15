@@ -60,10 +60,20 @@ def index():
 
             img = preprocess_image(save_path)
             
-            # TFLite Inference
+            # TFLite Inference (Dual Output)
             interpreter.set_tensor(input_details[0]['index'], img)
             interpreter.invoke()
-            pred = interpreter.get_tensor(output_details[0]['index'])[0][0]
+            
+            out0 = interpreter.get_tensor(output_details[0]['index'])
+            out1 = interpreter.get_tensor(output_details[1]['index'])
+            
+            # Identify prediction and conv outputs by shape
+            if len(out0.shape) == 2:
+                pred = out0[0][0]
+                conv_outputs = out1
+            else:
+                pred = out1[0][0]
+                conv_outputs = out0
 
             print("RAW MODEL OUTPUT:", pred)
 
@@ -77,9 +87,32 @@ def index():
 
             img_path = save_path
             
-            # Generate Grad-CAM (DISABLED FOR RENDER FREE TIER)
-            # gradcam_path = generate_gradcam(save_path, model)
-            gradcam_path = None
+            # Generate Saliency Map (Activation-only CAM)
+            heatmap = np.mean(conv_outputs[0], axis=-1)
+            heatmap = np.maximum(heatmap, 0)
+            max_val = np.max(heatmap)
+            if max_val > 0:
+                heatmap /= max_val
+            
+            # Load original image
+            original_img = cv2.imread(save_path)
+            original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB)
+            
+            # Resize heatmap to match original image
+            heatmap_resized = cv2.resize(heatmap, (original_img.shape[1], original_img.shape[0]))
+            heatmap_resized = np.uint8(255 * heatmap_resized)
+            
+            # Apply colormap
+            heatmap_colored = cv2.applyColorMap(heatmap_resized, cv2.COLORMAP_JET)
+            heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
+            
+            # Superimpose
+            superimposed = cv2.addWeighted(original_img, 0.6, heatmap_colored, 0.4, 0)
+            
+            # Save Heatmap image
+            gradcam_filename = "gradcam_" + os.path.basename(save_path)
+            gradcam_path = os.path.join(app.config["UPLOAD_FOLDER"], gradcam_filename)
+            cv2.imwrite(gradcam_path, cv2.cvtColor(superimposed, cv2.COLOR_RGB2BGR))
 
     return render_template(
         "index.html",
