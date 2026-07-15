@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, jsonify
-import tensorflow as tf
 import numpy as np
 import cv2
 import os
@@ -7,6 +6,11 @@ from dotenv import load_dotenv
 import requests
 import json
 import base64
+
+try:
+    import tflite_runtime.interpreter as tflite
+except ImportError:
+    import tensorflow.lite as tflite
 
 load_dotenv()
 
@@ -16,14 +20,14 @@ app.config["UPLOAD_FOLDER"] = "static/uploads"
 # Ensure upload folder exists
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-# Load trained model
+# Load trained TFLite model
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "model", "phase2_kesava.h5")
+MODEL_PATH = os.path.join(BASE_DIR, "model", "phase2_kesava.tflite")
 
-model = tf.keras.models.load_model(MODEL_PATH)
-
-# Global variable to cache the Grad-CAM model
-grad_model = None
+interpreter = tflite.Interpreter(model_path=MODEL_PATH)
+interpreter.allocate_tensors()
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
 # Get Groq API key
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -37,76 +41,7 @@ def preprocess_image(img_path):
     img = np.expand_dims(img, axis=0)
     return img
 
-# Grad-CAM Implementation
-def generate_gradcam(img_path, base_model):
-    global grad_model
-    try:
-        if grad_model is None:
-            # Find last conv layer
-            last_conv_layer = None
-            for layer in reversed(base_model.layers):
-                if 'conv' in layer.name.lower():
-                    last_conv_layer = layer.name
-                    break
-            
-            if not last_conv_layer:
-                return None
-            
-            # Create Grad-CAM model once and cache it globally
-            grad_model = tf.keras.models.Model(
-                inputs=[base_model.inputs],
-                outputs=[base_model.get_layer(last_conv_layer).output, base_model.output]
-            )
-            
-        # Preprocess image
-        img = preprocess_image(img_path)
-        
-        # Compute gradient
-        with tf.GradientTape() as tape:
-            conv_outputs, predictions = grad_model(img)
-            loss = predictions[:, 0]
-        
-        # Get gradients
-        grads = tape.gradient(loss, conv_outputs)
-        pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-        
-        # Weight feature maps
-        conv_outputs = conv_outputs[0]
-        heatmap = conv_outputs @ pooled_grads[..., tf.newaxis]
-        heatmap = tf.squeeze(heatmap)
-        
-        # Normalize heatmap
-        heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
-        heatmap = heatmap.numpy()
-        
-        # Load original image
-        original_img = cv2.imread(img_path)
-        original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB)
-        
-        # Resize heatmap to match original image
-        heatmap_resized = cv2.resize(heatmap, (original_img.shape[1], original_img.shape[0]))
-        heatmap_resized = np.uint8(255 * heatmap_resized)
-        
-        # Apply colormap
-        heatmap_colored = cv2.applyColorMap(heatmap_resized, cv2.COLORMAP_JET)
-        heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
-        
-        # Superimpose
-        superimposed = cv2.addWeighted(original_img, 0.6, heatmap_colored, 0.4, 0)
-        
-        # Save Grad-CAM image
-        gradcam_filename = "gradcam_" + os.path.basename(img_path)
-        gradcam_path = os.path.join(app.config["UPLOAD_FOLDER"], gradcam_filename)
-        cv2.imwrite(gradcam_path, cv2.cvtColor(superimposed, cv2.COLOR_RGB2BGR))
-        
-        # Clear keras session to free up memory immediately after processing
-        tf.keras.backend.clear_session()
-        
-        return gradcam_path
-        
-    except Exception as e:
-        print(f"Grad-CAM Error: {e}")
-        return None
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -124,7 +59,11 @@ def index():
             file.save(save_path)
 
             img = preprocess_image(save_path)
-            pred = model.predict(img, verbose=0)[0][0]
+            
+            # TFLite Inference
+            interpreter.set_tensor(input_details[0]['index'], img)
+            interpreter.invoke()
+            pred = interpreter.get_tensor(output_details[0]['index'])[0][0]
 
             print("RAW MODEL OUTPUT:", pred)
 
