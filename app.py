@@ -22,24 +22,8 @@ MODEL_PATH = os.path.join(BASE_DIR, "model", "phase2_kesava.h5")
 
 model = tf.keras.models.load_model(MODEL_PATH)
 
-# ==========================================
-# MEMORY OPTIMIZATION FOR RENDER (512MB RAM)
-# ==========================================
-# Instead of creating the grad_model on every image upload (which crashes the server), 
-# we create it ONCE globally when the app starts.
-last_conv_layer = None
-for layer in reversed(model.layers):
-    if 'conv' in layer.name.lower():
-        last_conv_layer = layer.name
-        break
-
-if last_conv_layer:
-    grad_model = tf.keras.models.Model(
-        inputs=[model.inputs],
-        outputs=[model.get_layer(last_conv_layer).output, model.output]
-    )
-else:
-    grad_model = None
+# Global variable to cache the Grad-CAM model
+grad_model = None
 
 # Get Groq API key
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -54,10 +38,26 @@ def preprocess_image(img_path):
     return img
 
 # Grad-CAM Implementation
-def generate_gradcam(img_path, grad_model):
-    if not grad_model:
-        return None
+def generate_gradcam(img_path, base_model):
+    global grad_model
     try:
+        if grad_model is None:
+            # Find last conv layer
+            last_conv_layer = None
+            for layer in reversed(base_model.layers):
+                if 'conv' in layer.name.lower():
+                    last_conv_layer = layer.name
+                    break
+            
+            if not last_conv_layer:
+                return None
+            
+            # Create Grad-CAM model once and cache it globally
+            grad_model = tf.keras.models.Model(
+                inputs=[base_model.inputs],
+                outputs=[base_model.get_layer(last_conv_layer).output, base_model.output]
+            )
+            
         # Preprocess image
         img = preprocess_image(img_path)
         
@@ -139,7 +139,7 @@ def index():
             img_path = save_path
             
             # Generate Grad-CAM
-            gradcam_path = generate_gradcam(save_path, grad_model)
+            gradcam_path = generate_gradcam(save_path, model)
 
     return render_template(
         "index.html",
