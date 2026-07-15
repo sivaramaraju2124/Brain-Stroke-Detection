@@ -147,9 +147,14 @@
                     <h2 class="section-title">Model Explainability (Grad-CAM)</h2>
                 </div>
                 
-                <p class="gradcam-description">
-                    Grad-CAM visualization highlights the regions of the CT scan that the AI model focused on when making its prediction. Warmer colors (red/yellow) indicate areas of higher attention.
-                </p>
+                <div class="gradcam-description" style="margin-bottom: 20px; line-height: 1.6;">
+                    <p>The Attention Heatmap highlights the specific regions of the CT scan that the AI model focused on to make its diagnosis. Use this color scale to interpret the image:</p>
+                    <ul style="list-style-type: none; padding-left: 0; margin-top: 10px;">
+                        <li><span style="display:inline-block; width:12px; height:12px; background-color:red; margin-right:8px; border-radius:2px;"></span><strong>Red/Yellow:</strong> High AI Attention (Highly suspicious regions influencing the prediction)</li>
+                        <li><span style="display:inline-block; width:12px; height:12px; background-color:cyan; margin-right:8px; border-radius:2px;"></span><strong>Green/Cyan:</strong> Medium AI Attention</li>
+                        <li><span style="display:inline-block; width:12px; height:12px; background-color:darkblue; margin-right:8px; border-radius:2px;"></span><strong>Dark Blue:</strong> Low/No AI Attention (Normal tissue)</li>
+                    </ul>
+                </div>
                 
                 <div class="gradcam-comparison">
                     <div class="gradcam-item">
