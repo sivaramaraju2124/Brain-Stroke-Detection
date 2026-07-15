@@ -138,8 +138,9 @@ def index():
 
             img_path = save_path
             
-            # Generate Grad-CAM
-            gradcam_path = generate_gradcam(save_path, model)
+            # Generate Grad-CAM (DISABLED FOR RENDER FREE TIER)
+            # gradcam_path = generate_gradcam(save_path, model)
+            gradcam_path = None
 
     return render_template(
         "index.html",
